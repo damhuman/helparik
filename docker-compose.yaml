@@ -1,0 +1,39 @@
+services:
+  bot:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: bot
+    command: >
+      sh -c "alembic upgrade head &&
+             python bot/main.py"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    expose:
+      - 6379
+    command: redis-server --save 60 1 --loglevel warning --appendonly yes --requirepass localhost
+    volumes:
+      - redis_db:/data
+
+  db:
+    image: postgres:16.0-alpine
+    volumes:
+      - postgres_db:/var/lib/postgresql/data/
+    expose:
+      - 5432
+    environment:
+      - POSTGRES_DB=dev_db
+      - POSTGRES_USER=dev_user
+      - POSTGRES_PASSWORD=dev_password
+
+volumes:
+    postgres_db:
+    redis_db:

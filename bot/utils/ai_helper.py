@@ -55,11 +55,7 @@ async def generate_prompt_message(telegram_id: int) -> str:
 
     3. AMOUNT
     - Extract the amount to be transferred or invoiced.
-    - If the user explicitly specifies a currency (e.g. "0.05 ETH", "20 DAI", "100 USDC") — use it directly.
-    - If the user provides a number without a currency:
-      - If the amount is less than 1 → assume ETH.
-      - If the amount is greater than or equal to 2 → assume USDC (as the default dollar-denominated currency).
-      - Otherwise (e.g. amount = 1.0, or ambiguous cases) — assume USDC unless there is strong context indicating otherwise.
+    - If the user mentions a value without specifying the currency (e.g. "send 50"), you must assume the currency is USDC.
     - Return the amount in numeric and symbolic format (e.g. 0.03 ETH, 200 USDC).
     - If the amount is missing or unclear — return ERROR.
 

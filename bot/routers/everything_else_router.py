@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from bot.utils.ai_helper import transcribe_audio, understand_action
@@ -25,14 +25,35 @@ async def voice_handler(message: Message, state: FSMContext) -> None:
     await state.clear()
     file = await message.bot.download(message.voice.file_id)
     transcribed_text = await transcribe_audio(file, message.chat.id)
-    ai_response = await understand_action(transcribed_text, message.chat.id)
-    action, contact, amount = ai_response.split("\n")
-    action = action.replace('1. ', '')
-    contact = contact.replace('2. ', '')
-    amount = amount.replace('3. ', '')
-    await message.reply(
-        text=f"Action {action} Contact {contact} Amount {amount}",
+    action, contact, amount, network, status = await understand_action(transcribed_text, message.chat.id)
+
+    await state.set_data(
+        {
+            "action": action,
+            "contact": contact,
+            "amount": amount,
+            "network": network,
+        }
     )
+
+    await message.reply(
+        text=f"Do you want {action} {amount} to {contact} on {network} network?",
+        reply_markup=MainKeyboards.transfer_keyboard(),
+    )
+
+@everything_else_router.callback_query(F.data == "confirm_send")
+async def confirmed_transfer_handler(callback: CallbackQuery, state: FSMContext) -> None:
+    data = await state.get_data()
+    await state.clear()
+    # send it
+    await callback.message.reply(text=ua_config.get("interaction", "transfer_confirmed").format(**data))
+    await callback.answer()
+
+
+@everything_else_router.callback_query(F.data == "decline_send")
+async def declined_transfer_handler(callback: CallbackQuery, state: FSMContext) -> None:
+    await callback.message.reply(text=ua_config.get("interaction", "transfer_declined"))
+    await callback.answer()
 
 
 @everything_else_router.message()

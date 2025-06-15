@@ -33,3 +33,21 @@ class MainKeyboards:
                 ]
             ]
         )
+
+    @staticmethod
+    def transfer_keyboard():
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=ua_config.get("interaction", "confirm_send"),
+                        callback_data="confirm_send",
+                    ),
+                    InlineKeyboardButton(
+                        text=ua_config.get("interaction", "decline_send"),
+                        callback_data="decline_send",
+                    )
+
+                ]
+            ]
+        )

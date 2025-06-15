@@ -12,6 +12,27 @@ const { IntMaxNodeClient } = require('intmax2-server-sdk');
 const app = express();
 app.use(express.json());
 
+// Custom JSON serializer to handle BigInt
+const serializeBigInt = (obj) => {
+    if (obj === null || obj === undefined) {
+        return obj;
+    }
+    if (typeof obj === 'bigint') {
+        return obj.toString();
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(serializeBigInt);
+    }
+    if (typeof obj === 'object') {
+        const result = {};
+        for (const [key, value] of Object.entries(obj)) {
+            result[key] = serializeBigInt(value);
+        }
+        return result;
+    }
+    return obj;
+};
+
 // In-memory store for multiple client sessions
 const sessions = new Map();
 
@@ -49,7 +70,7 @@ app.post('/login', async (req, res) => {
     const sessionId = uuidv4();
     sessions.set(sessionId, client);
 
-    return res.json({ sessionId, address: client.address });
+    return res.json(serializeBigInt({ sessionId, address: client.address }));
   } catch (err) {
     console.error('Login error:', err);
     return res.status(500).json({ error: err.message });
@@ -76,7 +97,7 @@ app.post('/logout', async (req, res) => {
 app.get('/balances', async (req, res) => {
   try {
     const { balances } = await req.client.fetchTokenBalances();
-    return res.json({ balances });
+    return res.json(serializeBigInt({ balances }));
   } catch (err) {
     console.error('Balances error:', err);
     return res.status(500).json({ error: err.message });
@@ -91,7 +112,7 @@ app.post('/sign', async (req, res) => {
 
   try {
     const signature = await req.client.signMessage(message);
-    return res.json({ signature });
+    return res.json(serializeBigInt({ signature }));
   } catch (err) {
     console.error('Sign error:', err);
     return res.status(500).json({ error: err.message });
@@ -108,7 +129,7 @@ app.post('/verify', async (req, res) => {
 
   try {
     const valid = await req.client.verifySignature(signature, message);
-    return res.json({ valid });
+    return res.json(serializeBigInt({ valid }));
   } catch (err) {
     console.error('Verify error:', err);
     return res.status(500).json({ error: err.message });
@@ -119,7 +140,7 @@ app.post('/verify', async (req, res) => {
 app.get('/tokens', async (req, res) => {
   try {
     const tokens = await req.client.getTokensList();
-    return res.json({ tokens });
+    return res.json(serializeBigInt({ tokens }));
   } catch (err) {
     console.error('Tokens error:', err);
     return res.status(500).json({ error: err.message });
@@ -137,7 +158,7 @@ app.post('/deposit/estimate', async (req, res) => {
       address: address || req.client.address,
       isGasEstimation: true,
     });
-    return res.json({ gas });
+    return res.json(serializeBigInt({ gas }));
   } catch (err) {
     console.error('Estimate deposit gas error:', err);
     return res.status(500).json({ error: err.message });
@@ -150,7 +171,7 @@ app.post('/deposit', async (req, res) => {
   const { amount, token, address } = req.body;
   try {
     const result = await req.client.deposit({ amount, token, address: address || req.client.address });
-    return res.json({ result });
+    return res.json(serializeBigInt({ result }));
   } catch (err) {
     console.error('Deposit error:', err);
     return res.status(500).json({ error: err.message });
@@ -164,7 +185,7 @@ app.post('/withdraw', async (req, res) => {
   try {
     const fee = await req.client.getWithdrawalFee(token);
     const tx = await req.client.withdraw({ amount, token, address });
-    return res.json({ fee, tx });
+    return res.json(serializeBigInt({ fee, tx }));
   } catch (err) {
     console.error('Withdraw error:', err);
     return res.status(500).json({ error: err.message });
@@ -175,7 +196,7 @@ app.post('/withdraw', async (req, res) => {
 app.get('/deposits', async (req, res) => {
   try {
     const deposits = await req.client.fetchDeposits({});
-    return res.json({ deposits });
+    return res.json(serializeBigInt({ deposits }));
   } catch (err) {
     console.error('Fetch deposits error:', err);
     return res.status(500).json({ error: err.message });
@@ -186,7 +207,7 @@ app.get('/deposits', async (req, res) => {
 app.get('/transfers', async (req, res) => {
   try {
     const transfers = await req.client.fetchTransfers({});
-    return res.json({ transfers });
+    return res.json(serializeBigInt({ transfers }));
   } catch (err) {
     console.error('Fetch transfers error:', err);
     return res.status(500).json({ error: err.message });
@@ -197,7 +218,7 @@ app.get('/transfers', async (req, res) => {
 app.get('/transactions', async (req, res) => {
   try {
     const txs = await req.client.fetchTransactions({});
-    return res.json({ txs });
+    return res.json(serializeBigInt({ txs }));
   } catch (err) {
     console.error('Fetch transactions error:', err);
     return res.status(500).json({ error: err.message });
@@ -208,7 +229,7 @@ app.get('/transactions', async (req, res) => {
 app.get('/pending-withdrawals', async (req, res) => {
   try {
     const pending = await req.client.fetchPendingWithdrawals();
-    return res.json({ pending });
+    return res.json(serializeBigInt({ pending }));
   } catch (err) {
     console.error('Fetch pending withdrawals error:', err);
     return res.status(500).json({ error: err.message });
@@ -225,7 +246,7 @@ app.post('/claim-withdrawals', async (req, res) => {
 
   try {
     const result = await req.client.claimWithdrawal(withdrawalIds);
-    return res.json({ result });
+    return res.json(serializeBigInt({ result }));
   } catch (err) {
     console.error('Claim withdrawals error:', err);
     return res.status(500).json({ error: err.message });

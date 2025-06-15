@@ -11,8 +11,11 @@ class MainKeyboards:
             keyboard=[
                 [
                     KeyboardButton(text=ua_config.get('main_menu', 'wallet')),
-                    KeyboardButton(text=ua_config.get('main_menu', 'contacts'))
+                    KeyboardButton(text=ua_config.get('main_menu', 'intmax_wallet')),
                 ],
+                [
+                    KeyboardButton(text=ua_config.get('main_menu', 'contacts'))
+                ]
             ],
             resize_keyboard=True,
         )

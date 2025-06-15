@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from openai import AsyncOpenAI
 
 from bot.utils.message_generator import generate_contacts
@@ -10,16 +8,18 @@ client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 
 async def understand_action(input_message: str, telegram_id: int) -> str:
-    content, role = await get_response_from_model(input_message, telegram_id)
-    await DbConnector.add_message(telegram_id=telegram_id, content=content, role=role, mtype="ai-response")
+    content = await get_response_from_model(input_message, telegram_id)
+    await DbConnector.add_message(telegram_id=telegram_id, content=content, role="assistant", mtype="ai-response")
     return content
 
 
-async def transcribe_audio(buffer: bytes) -> str:
+async def transcribe_audio(buffer: bytes, telegram_id: int) -> str:
     transcription = await client.audio.transcriptions.create(
         model="whisper-1",
         file=("voice.ogg", buffer, "audio/ogg"),
     )
+    await DbConnector.add_message(
+        telegram_id=telegram_id, content=transcription.text, role="user", mtype="transcribed-voice")
     return transcription.text
 
 
@@ -49,20 +49,17 @@ async def generate_valid_input(input_message: str, telegram_id: str) -> list[dic
     ]
     return messages
 
-async def get_response_from_model(input_message: str, telegram_id: str, model: str = "gpt-4.1-2025-04-14") -> Tuple[str, str]:
+
+async def get_response_from_model(input_message: str, telegram_id: str, model: str = "gpt-4.1-2025-04-14") -> str:
     messages = await generate_valid_input(input_message, telegram_id)
-    print(
-        f"Sending messages to model: {model} with messages: {messages}"
-    )
     stream = await client.chat.completions.create(
         model=model,
         messages=messages,
         stream=True,
     )
     content = ''
-    role = 'assistant'
     async for chunk in stream:
         if chunk.choices[0].delta.content is not None:
             content += chunk.choices[0].delta.content or ""
 
-    return content, role
+    return content

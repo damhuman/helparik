@@ -86,7 +86,7 @@ class DbConnector(metaclass=SingletonMeta):
             return contact
 
     @staticmethod
-    async def add_message(telegram_id: int, content: str, role: str = "user", mtype: str = "transcribed-voice") -> None:
+    async def add_message(telegram_id: int, content: str, role: str, mtype: str) -> None:
         async with get_session() as session:
             stmt = (
                 insert(Message)

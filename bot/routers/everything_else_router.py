@@ -24,13 +24,12 @@ class EverythingElseStates(StatesGroup):
 async def voice_handler(message: Message, state: FSMContext) -> None:
     await state.clear()
     file = await message.bot.download(message.voice.file_id)
-    transcribed_text = await transcribe_audio(file)
-    await DbConnector.add_message(message.chat.id, transcribed_text)
+    transcribed_text = await transcribe_audio(file, message.chat.id)
     ai_response = await understand_action(transcribed_text, message.chat.id)
     action, contact, amount = ai_response.split("\n")
 
     await message.reply(
-        text=f"Action {action} Contact{contact} Amount {amount}",
+        text=f"Action {action} Contact {contact} Amount {amount}",
     )
 
 

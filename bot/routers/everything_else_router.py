@@ -3,7 +3,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
-from bot.utils.ai_helper import transcribe_audio
+from bot.utils.ai_helper import transcribe_audio, understand_action
 from database.connector import DbConnector
 from configuration import ua_config
 
@@ -26,9 +26,11 @@ async def voice_handler(message: Message, state: FSMContext) -> None:
     file = await message.bot.download(message.voice.file_id)
     transcribed_text = await transcribe_audio(file)
     await DbConnector.add_message(message.chat.id, transcribed_text)
+    ai_response = await understand_action(transcribed_text, message.chat.id)
+    action, contact, amount = ai_response.split("\n")
 
     await message.reply(
-        text=transcribed_text,
+        text=f"Action {action} Contact{contact} Amount {amount}",
     )
 
 

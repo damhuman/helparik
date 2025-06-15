@@ -1,14 +1,30 @@
+from typing import Tuple
+
 from openai import AsyncOpenAI
 
 from bot.utils.message_generator import generate_contacts
 from configuration import OPENAI_API_KEY
+from database.connector import DbConnector
 
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 
 async def understand_action(input_message: str, telegram_id: int) -> str:
-    contact_list = await generate_contacts(telegram_id=telegram_id)
+    content, role = await get_response_from_model(input_message, telegram_id)
+    await DbConnector.add_message(telegram_id=telegram_id, content=content, role=role, mtype="ai-response")
+    return content
 
+
+async def transcribe_audio(buffer: bytes) -> str:
+    transcription = await client.audio.transcriptions.create(
+        model="whisper-1",
+        file=("voice.ogg", buffer, "audio/ogg"),
+    )
+    return transcription.text
+
+
+async def generate_prompt_message(telegram_id: int) -> str:
+    contact_list = await generate_contacts(telegram_id=telegram_id)
     prompt = f"""
     You're helper in web3 wallet.
     By provided text you should understand what user want to do.
@@ -22,17 +38,31 @@ async def understand_action(input_message: str, telegram_id: int) -> str:
     Contacts:
     {contact_list}
     """
+    return prompt
+
+
+async def generate_valid_input(input_message: str, telegram_id: str) -> list[dict]:
+    prompt = await generate_prompt_message(telegram_id)
     messages = [
         {"role": "system", "content": prompt},
         {"role": "user", "content": input_message},
     ]
-    response = await client.get_completion(messages, temperature=0.7)
-    print(response["choices"][0]["message"]["content"])
+    return messages
 
-
-async def transcribe_audio(buffer: bytes) -> str:
-    transcription = await client.audio.transcriptions.create(
-        model="whisper-1",
-        file=("voice.ogg", buffer, "audio/ogg"),
+async def get_response_from_model(input_message: str, telegram_id: str, model: str = "gpt-4.1-2025-04-14") -> Tuple[str, str]:
+    messages = await generate_valid_input(input_message, telegram_id)
+    print(
+        f"Sending messages to model: {model} with messages: {messages}"
     )
-    return transcription.text
+    stream = await client.chat.completions.create(
+        model=model,
+        messages=messages,
+        stream=True,
+    )
+    content = ''
+    role = 'assistant'
+    async for chunk in stream:
+        if chunk.choices[0].delta.content is not None:
+            content += chunk.choices[0].delta.content or ""
+
+    return content, role

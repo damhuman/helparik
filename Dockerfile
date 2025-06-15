@@ -11,4 +11,4 @@ WORKDIR /app
 COPY . /app
 RUN poetry install
 
-CMD alembic upgrade head && python bot/main.py
+CMD alembic upgrade head && python main.py

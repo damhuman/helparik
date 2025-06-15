@@ -6,7 +6,7 @@ services:
     image: bot
     command: >
       sh -c "alembic upgrade head &&
-             python bot/main.py"
+             python main.py"
     volumes:
       - .:/app
     env_file:

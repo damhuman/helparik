@@ -31,7 +31,7 @@ async def generate_prompt_message(telegram_id: int) -> str:
     If this is about sending transfer you should pick best matching from contacts list that i'll provide to you later.
     As result you always should answer in such format:
     1. What action to do(available actions will be provided later if nothing from matched action return ERROR)
-    2. What contact user speaking about(if you cant find contact from text return ERROR)
+    2. What contact user speaking about in such format contact_name;contact_address (if you cant find contact from text return ERROR)
     3. Amount of transfer(if you cant recognise amount return ERROR)
     Available actions:
     - TRANSFER(if user wants to transfer money)

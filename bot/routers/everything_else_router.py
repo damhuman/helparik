@@ -27,7 +27,9 @@ async def voice_handler(message: Message, state: FSMContext) -> None:
     transcribed_text = await transcribe_audio(file, message.chat.id)
     ai_response = await understand_action(transcribed_text, message.chat.id)
     action, contact, amount = ai_response.split("\n")
-
+    action = action.replace('1. ', '')
+    contact = contact.replace('2. ', '')
+    amount = amount.replace('3. ', '')
     await message.reply(
         text=f"Action {action} Contact {contact} Amount {amount}",
     )

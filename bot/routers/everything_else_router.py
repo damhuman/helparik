@@ -16,12 +16,15 @@ from bot.utils.eth_connector import ETHConnector
 everything_else_router = Router()
 
 
-@everything_else_router.message(F.voice)
+@everything_else_router.message(F.voice, state='*')
 async def voice_handler(message: Message, state: FSMContext) -> None:
     await state.clear()
     file = await message.bot.download(message.voice.file_id)
-    text = await transcribe_audio(file)
-    await message.reply(text=text,)
+    transcribed_text = await transcribe_audio(file)
+
+
+
+    await message.reply(text=transcribed_text,)
 
 @everything_else_router.message()
 async def everything_else_handler(message: Message, state: FSMContext) -> None:

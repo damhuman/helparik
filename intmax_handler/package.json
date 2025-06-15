@@ -1,0 +1,19 @@
+{
+  "name": "intmax_handler",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0",
+    "intmax2-client-sdk": "^1.2.4",
+    "intmax2-server-sdk": "^1.2.4",
+    "node-fetch": "^3.3.2",
+    "uuid": "^11.1.0"
+  }
+}

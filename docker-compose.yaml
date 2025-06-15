@@ -34,6 +34,19 @@ services:
       - POSTGRES_USER=dev_user
       - POSTGRES_PASSWORD=dev_password
 
+  intmax-server:
+    build:
+      context: intmax_handler/
+      dockerfile: Dockerfile
+    image: intmax-rest-server:latest
+    container_name: intmax-server
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    restart: unless-stopped
+
+
 volumes:
     postgres_db:
     redis_db:

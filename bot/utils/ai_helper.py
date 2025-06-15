@@ -45,6 +45,8 @@ async def generate_prompt_message(telegram_id: int) -> str:
     - Determine what the user wants to do. Match to one of the following options:
       - TRANSFER – if the user wants to send tokens or crypto assets to someone.
       - SEND_INVOICE – if the user wants to issue or request payment via invoice.
+      - DEPOSIT - if the user wants to make deposit to INTMAX network
+      - WITHDRAW - if the user wants to withdraw from INTMAX network
     - If you cannot confidently detect an action — return ERROR.
 
     2. CONTACT_NAME;CONTACT_ADDRESS

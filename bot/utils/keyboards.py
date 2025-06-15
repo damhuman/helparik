@@ -60,7 +60,7 @@ class MainKeyboards:
                 [
                     InlineKeyboardButton(
                         text=ua_config.get("main", "blockchain_explorer"),
-                        url=f"https://sepolia.etherscan.io/tx/0x{txid}",
+                        url=f"https://sepolia.etherscan.io/tx/{txid}",
                     )
                 ]
             ]

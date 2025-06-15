@@ -9,7 +9,7 @@ from database.connector import DbConnector
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 
-async def understand_action(input_message: str, telegram_id: int) -> Tuple[str, str, str, str, str, bool]:
+async def understand_action(input_message: str, telegram_id: int) -> Tuple[str, str, str, str, str]:
     content = await get_response_from_model(input_message, telegram_id)
     await DbConnector.add_message(telegram_id=telegram_id, content=content, role="assistant", mtype="ai-response")
     return parse_ai_response(content)
@@ -105,20 +105,11 @@ async def get_response_from_model(input_message: str, telegram_id: str, model: s
 
     return content
 
-def parse_ai_response(response: str) -> Tuple[str, str, str, str, str, bool]:
+def parse_ai_response(response: str) -> Tuple[str, str, str, str, str]:
     action, contact, amount, network = response.split("\n")
     action = action.replace('1. ', '')
     contact = contact.replace('2. ', '')
     username, address = contact.split(";")
     amount = amount.replace('3. ', '')
     network = network.replace('4. ', '')
-    status = True
-    if action == "ERROR":
-        status = False
-    if username == "ERROR":
-        status = False
-    if address == "ERROR":
-        status = False
-    if amount == "ERROR":
-        status = False
-    return action, username, address, amount, network, status
+    return action, username, address, amount, network

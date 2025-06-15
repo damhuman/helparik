@@ -24,12 +24,21 @@ async def voice_handler(message: Message, state: FSMContext) -> None:
     await state.clear()
     file = await message.bot.download(message.voice.file_id)
     transcribed_text = await transcribe_audio(file, message.chat.id)
-    action, username, address, amount, network, status = await understand_action(transcribed_text, message.chat.id)
-    if not status:
+    action, username, address, amount, network = await understand_action(transcribed_text, message.chat.id)
+    if action == "ERROR":
         await message.reply(
-            ua_config.get('main', 'error_processing_request')
+            ua_config.get('main', 'invalid_action')
         )
         return
+    if username == "ERROR" or address == "ERROR":
+        await message.reply(
+            ua_config.get('main', 'invalid_receiver')
+        )
+        return
+    if amount == "ERROR":
+        await message.reply(
+            ua_config.get('main', 'invalid_amount')
+        )
 
     if action == 'TRANSFER':
         await state.set_state(EverythingElseStates.transaction_confirmation)

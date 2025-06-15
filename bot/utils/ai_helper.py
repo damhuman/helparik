@@ -30,9 +30,9 @@ async def understand_action(input_message: str, telegram_id: int) -> str:
     print(response["choices"][0]["message"]["content"])
 
 
-async def transcribe_audio(audio_file: bytes) -> str:
+async def transcribe_audio(buffer: bytes) -> str:
     transcription = await client.audio.transcriptions.create(
         model="whisper-1",
-        file=audio_file
+        file=("voice.ogg", buffer, "audio/ogg"),
     )
     return transcription.text

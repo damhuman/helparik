@@ -19,12 +19,8 @@ everything_else_router = Router()
 @everything_else_router.message(F.voice)
 async def voice_handler(message: Message, state: FSMContext) -> None:
     await state.clear()
-    byte_file = BytesIO()
-    await message.bot.download(message.voice.file_id, byte_file)
-    byte_file.seek(0)
-    byte_file.name = 'voice.ogg'
-    # byte_file.t
-    text = await transcribe_audio(byte_file)
+    file = await message.bot.download(message.voice.file_id)
+    text = await transcribe_audio(file)
     await message.reply(text=text,)
 
 @everything_else_router.message()

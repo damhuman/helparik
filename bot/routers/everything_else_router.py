@@ -19,6 +19,7 @@ everything_else_router = Router()
 class EverythingElseStates(StatesGroup):
     transaction_confirmation = State()
     deposit_confirmation = State()
+    withdraw_confirmation = State()
 
 
 async def make_deposit(amount: float, telegram_id: int):
@@ -38,6 +39,70 @@ async def make_deposit(amount: float, telegram_id: int):
             }
         )
     return res['result']['status'], res['result']['txHash']
+
+
+async def make_withdraw(amount: float, telegram_id: int):
+    db_con = DbConnector()
+    print('hey1')
+    user = await db_con.get_user(telegram_id=telegram_id)
+    private_key = WalletManager.load_private_key(user.keystore)
+    async with IntMaxConnector() as connector:
+        await connector.login(f'0x{private_key}')
+        print('hey')
+        res = await connector.withdraw(amount=amount,
+            token={
+                "tokenIndex": 0,
+                "symbol": 'ETH',
+                "decimals": 18,
+                "contractAddress": '0x0000000000000000000000000000000000000000',
+                "createdAt": { "_seconds": 1748082445, "_nanoseconds": 385000000 },
+                "tokenType": 0
+            },
+            address=user.wallet_address
+        )
+    return res['tx']['txTreeRoot']
+
+
+async def make_withdraw(amount: float, telegram_id: int):
+    db_con = DbConnector()
+    user = await db_con.get_user(telegram_id=telegram_id)
+    private_key = WalletManager.load_private_key(user.keystore)
+    async with IntMaxConnector() as connector:
+        await connector.login(f'0x{private_key}')
+        res = await connector.withdraw(amount=amount,
+            token={
+                "tokenIndex": 0,
+                "symbol": 'ETH',
+                "decimals": 18,
+                "contractAddress": '0x0000000000000000000000000000000000000000',
+                "createdAt": { "_seconds": 1748082445, "_nanoseconds": 385000000 },
+                "tokenType": 0
+            },
+            address=user.wallet_address
+        )
+    return res['tx']['txTreeRoot']
+
+
+async def make_transfer(amount: float, telegram_id: int, address: str):
+    db_con = DbConnector()
+    user = await db_con.get_user(telegram_id=telegram_id)
+    private_key = WalletManager.load_private_key(user.keystore)
+    transfers = [{
+        'address': address,
+        'amount': amount,
+        'token': {
+            "tokenIndex": 0,
+            "symbol": 'ETH',
+            "decimals": 18,
+            "contractAddress": '0x0000000000000000000000000000000000000000',
+            "createdAt": { "_seconds": 1748082445, "_nanoseconds": 385000000 },
+            "tokenType": 0
+        }
+    }]
+    async with IntMaxConnector() as connector:
+        await connector.login(f'0x{private_key}')
+        res = await connector.broadcast_transaction(transfers=transfers)
+    return res['tx']['txTreeRoot']
 
 
 @everything_else_router.message(F.voice)
@@ -63,6 +128,19 @@ async def voice_handler(message: Message, state: FSMContext) -> None:
             reply_markup=MainKeyboards.yes_no_keyboard()
         )
         return
+
+    if action == "WITHDRAW":
+        await state.set_state(EverythingElseStates.withdraw_confirmation)
+        if 'eth' not in amount.lower():
+            amount += ' ETH'
+        await state.update_data(amount=amount)
+        await state.update_data(network=network)
+        await message.reply(
+            text=ua_config.get('transactions', 'withdraw_confirm').format(amount=amount),
+            reply_markup=MainKeyboards.yes_no_keyboard()
+        )
+        return
+
     if action == "ERROR":
         await message.reply(
             ua_config.get('main', 'invalid_action')
@@ -76,18 +154,19 @@ async def voice_handler(message: Message, state: FSMContext) -> None:
 
     if action == 'TRANSFER':
         await state.set_state(EverythingElseStates.transaction_confirmation)
-        await state.update_data(amount=amount, address=address)
+        await state.update_data(amount=amount, address=address, network=network)
         await message.reply(
             ua_config.get('transactions', 'transfer').format(
                 amount=amount,
-                address=f'{address} ({username})'
+                address=f'{address} ({username})',
+                network=network
             ),
             reply_markup=MainKeyboards.yes_no_keyboard()
         )
         return
 
     await message.reply(
-        text=ua_config.get('main', 'error_processing_request')
+        text=ua_config.get('main', 'invalid_action')
     )
 
 
@@ -101,9 +180,34 @@ async def transaction_confirmation_handler(callback: CallbackQuery, state: FSMCo
             text=ua_config.get('transactions', 'no_confirmation')
         )
         return
+    await callback.message.bot.edit_message_text(
+        message_id=callback.message.message_id,
+        chat_id=callback.message.chat.id,
+        text=ua_config.get('main', 'processing')
+    )
     data = await state.get_data()
     amount = float(data.get('amount').split(' ')[0])
+    network = data.get('network')
     address = data.get('address')
+    if network.lower() == 'intmax':
+        try:
+            txid = await make_transfer(amount, callback.message.chat.id, address=address)
+        except Exception as e:
+            await state.clear()
+            await callback.message.bot.edit_message_text(
+                message_id=callback.message.message_id,
+                chat_id=callback.message.chat.id,
+                text=ua_config.get('transactions', 'problems_with_transactions').format(error=e)
+            )
+            return
+        await state.clear()
+        await callback.message.bot.edit_message_text(
+            message_id=callback.message.message_id,
+            chat_id=callback.message.chat.id,
+            text=ua_config.get('transactions', 'success_transaction_intmax').format(txid=txid),
+            reply_markup=MainKeyboards.blockchain_explorer_button(txid=txid)
+        )
+
     db_con = DbConnector()
     user = await db_con.get_user(telegram_id=callback.message.chat.id)
     private_key = WalletManager.load_private_key(user.keystore)
@@ -137,6 +241,11 @@ async def deposit_confirmation_handler(callback: CallbackQuery, state: FSMContex
             text=ua_config.get('transactions', 'no_confirmation')
         )
         return
+    await callback.message.bot.edit_message_text(
+        message_id=callback.message.message_id,
+        chat_id=callback.message.chat.id,
+        text=ua_config.get('main', 'processing')
+    )
     data = await state.get_data()
     amount = float(data.get('amount').split(' ')[0])
     try:
@@ -154,6 +263,42 @@ async def deposit_confirmation_handler(callback: CallbackQuery, state: FSMContex
         message_id=callback.message.message_id,
         chat_id=callback.message.chat.id,
         text=ua_config.get('transactions', 'success_deposit').format(txid=txid),
+        reply_markup=MainKeyboards.blockchain_explorer_button(txid=txid)
+    )
+
+
+@everything_else_router.callback_query(EverythingElseStates.withdraw_confirmation)
+async def withdraw_confirmation_handler(callback: CallbackQuery, state: FSMContext) -> None:
+    if callback.data == 'no':
+        await state.clear()
+        await callback.message.bot.edit_message_text(
+            message_id=callback.message.message_id,
+            chat_id=callback.message.chat.id,
+            text=ua_config.get('transactions', 'no_confirmation')
+        )
+        return
+    await callback.message.bot.edit_message_text(
+        message_id=callback.message.message_id,
+        chat_id=callback.message.chat.id,
+        text=ua_config.get('main', 'processing')
+    )
+    data = await state.get_data()
+    amount = float(data.get('amount').split(' ')[0])
+    try:
+        txid = await make_withdraw(amount=amount, telegram_id=callback.message.chat.id)
+    except Exception as e:
+        await state.clear()
+        await callback.message.bot.edit_message_text(
+            message_id=callback.message.message_id,
+            chat_id=callback.message.chat.id,
+            text=ua_config.get('transactions', 'problems_with_transactions').format(error=e)
+        )
+        return
+    await state.clear()
+    await callback.message.bot.edit_message_text(
+        message_id=callback.message.message_id,
+        chat_id=callback.message.chat.id,
+        text=ua_config.get('transactions', 'success_withdraw').format(txid=txid),
         reply_markup=MainKeyboards.blockchain_explorer_button(txid=txid)
     )
 

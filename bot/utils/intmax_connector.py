@@ -191,3 +191,18 @@ class IntMaxConnector:
             if response.status == 200:
                 return data
             raise Exception(data.get("error", "Failed to claim withdrawals"))
+
+    async def broadcast_transaction(
+        self, 
+        transfers: List[Dict[str, Any]], 
+        is_withdrawal: bool = False
+    ) -> Dict[str, Any]:
+        async with self.session.post(
+            f"{self.base_url}/broadcast-transaction",
+            json={"transfers": transfers, "isWithdrawal": is_withdrawal},
+            headers=self._get_headers()
+        ) as response:
+            data = await response.json()
+            if response.status == 200:
+                return data
+            raise Exception(data.get("error", "Failed to broadcast transaction"))

@@ -184,7 +184,9 @@ app.post('/withdraw', async (req, res) => {
   const { amount, token, address } = req.body;
   try {
     const fee = await req.client.getWithdrawalFee(token);
+    console.log('Withdraw fee: ', fee);
     const tx = await req.client.withdraw({ amount, token, address });
+    console.log('TXID: ', tx);
     return res.json(serializeBigInt({ fee, tx }));
   } catch (err) {
     console.error('Withdraw error:', err);
@@ -249,6 +251,33 @@ app.post('/claim-withdrawals', async (req, res) => {
     return res.json(serializeBigInt({ result }));
   } catch (err) {
     console.error('Claim withdrawals error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /broadcast-transaction
+// Body: { transfers: [{ address: string, amount: number | string, token: Token, claim_beneficiary?: string }], isWithdrawal?: boolean }
+app.post('/broadcast-transaction', async (req, res) => {
+  const { transfers, isWithdrawal } = req.body;
+  
+  if (!Array.isArray(transfers) || transfers.length === 0) {
+    return res.status(400).json({ error: 'transfers array is required and must not be empty' });
+  }
+
+  // Validate each transfer
+  for (const transfer of transfers) {
+    if (!transfer.address || !transfer.amount || !transfer.token) {
+      return res.status(400).json({ 
+        error: 'Each transfer must have address, amount, and token fields' 
+      });
+    }
+  }
+
+  try {
+    const tx = await req.client.broadcastTransaction(transfers, isWithdrawal);
+    return res.json(serializeBigInt({ tx }));
+  } catch (err) {
+    console.error('Broadcast transaction error:', err);
     return res.status(500).json({ error: err.message });
   }
 });

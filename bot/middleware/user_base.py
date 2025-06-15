@@ -13,14 +13,13 @@ class UserToContextMiddleware(BaseMiddleware):
         self,
         handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
         event: Message,
-        data: Dict[str, Any]
+        data: Dict[str, Any],
     ) -> Any:
-
         db_con = DbConnector()
-        user = data['event_from_user']
-        data['user'] = await db_con.get_or_create_user(user.id, user.username)
+        user = data["event_from_user"]
+        data["user"] = await db_con.get_or_create_user(user.id, user.username)
         process = False
-        if event.chat.type == 'private':
+        if event.chat.type == "private":
             process = True
         if event.chat.join_by_request:
             process = True
@@ -33,10 +32,10 @@ class UpdateUsernameMiddleware(BaseMiddleware):
         self,
         handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
         event: Message,
-        data: Dict[str, Any]
+        data: Dict[str, Any],
     ) -> Any:
-        user = data['user']
-        from_user = data['event_from_user']
+        user = data["user"]
+        from_user = data["event_from_user"]
         if user.username != from_user.username:
             user.username = from_user.username
             await DbConnector().update_user(user)

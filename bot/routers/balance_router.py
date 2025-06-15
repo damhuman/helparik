@@ -12,7 +12,7 @@ from bot.utils.message_generator import generate_initial_message
 balance_router = Router()
 
 
-@balance_router.message(F.text == ua_config.get('main_menu', 'wallet'))
+@balance_router.message(F.text == ua_config.get("main_menu", "wallet"))
 async def wallet_text_handler(message: Message, state: FSMContext) -> None:
     await state.clear()
     text = await generate_initial_message(message.from_user.id)

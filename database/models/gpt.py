@@ -1,29 +1,21 @@
-from sqlalchemy import Column, BigInteger, String, Integer, ForeignKey, DateTime, Text
-from sqlalchemy.orm import relationship
+from datetime import datetime
+
+from sqlalchemy import BigInteger, String, Integer, ForeignKey, DateTime, Text
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from database.base import Base
 
 
-class Chat(Base):
-    __tablename__ = 'chats'
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    telegram_id = Column(BigInteger, ForeignKey('users.telegram_id'), nullable=False)
-    # relationship
-    messages = relationship('Message', uselist=True, viewonly=True,
-                            primaryjoin='Chat.id == Message.chat_id', )
-
-    def __repr__(self):
-        return f'< Id: {self.id}, Telegram Id: {self.telegram_id} >'
-
-
 class Message(Base):
     __tablename__ = 'messages'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    chat_id = Column(BigInteger, ForeignKey('chats.id'), nullable=True)
-    content = Column(Text())
-    role = Column(String(255))
-    created_at = Column(DateTime, server_default=func.now())
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('users.telegram_id', ondelete="CASCADE"),
+                                             nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    role: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    mtype: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(), default=func.now())
 
     def __repr__(self):
         return f'< Id: {self.id}, Content: {self.content} >'

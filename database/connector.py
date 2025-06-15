@@ -1,12 +1,13 @@
 import logging
 from typing import Optional, List
 
+from sqlalchemy import update, insert
 from sqlalchemy.future import select
-from sqlalchemy import update, delete
 
-from services.singleton import SingletonMeta
 from database.base import get_session
+from database.models.gpt import *
 from database.models.user import User, Contact
+from services.singleton import SingletonMeta
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ class DbConnector(metaclass=SingletonMeta):
             )
             users = result.scalars().all()
             return users
-    
+
     async def update_user(self, user: User) -> bool:
         async with get_session() as session:
             stmt = (
@@ -83,3 +84,18 @@ class DbConnector(metaclass=SingletonMeta):
             session.add(contact)
             await session.flush()
             return contact
+
+    @staticmethod
+    async def add_message(telegram_id: int, content: str, role: str = "user", mtype: str = "transcribed-voice") -> None:
+        async with get_session() as session:
+            stmt = (
+                insert(Message)
+                .values(
+                    telegram_id=telegram_id,
+                    content=content,
+                    role=role,
+                    mtype=mtype
+                )
+            )
+            await session.execute(stmt)
+            await session.commit()

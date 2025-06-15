@@ -24,7 +24,7 @@ async def understand_action(input_message: str, telegram_id: int) -> str:
     """
     messages = [
         {"role": "system", "content": prompt},
-        {"role": "user", "content": input_message}
+        {"role": "user", "content": input_message},
     ]
     response = await client.get_completion(messages, temperature=0.7)
     print(response["choices"][0]["message"]["content"])

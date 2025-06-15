@@ -17,7 +17,7 @@ class RedisClient:
         password: str = "password",
         db: int = 0,
         max_retries: int = 3,
-        retry_delay: int = 1
+        retry_delay: int = 1,
     ):
         self.host = host
         self.port = port
@@ -35,7 +35,7 @@ class RedisClient:
                 port=self.port,
                 password=self.password,
                 db=self.db,
-                decode_responses=True
+                decode_responses=True,
             )
             # Test connection
             await self._client.ping()
@@ -46,6 +46,7 @@ class RedisClient:
 
     def ensure_connection(func):
         """Decorator to ensure Redis connection is established before operations."""
+
         @wraps(func)
         async def wrapper(self, *args, **kwargs):
             if not self._client:
@@ -56,6 +57,7 @@ class RedisClient:
                 # Try to reconnect once
                 await self.connect()
                 return await func(self, *args, **kwargs)
+
         return wrapper
 
     @ensure_connection

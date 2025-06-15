@@ -1,6 +1,5 @@
-from io import BytesIO
-
 from aiogram import Router, F
+from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
@@ -16,20 +15,27 @@ from bot.utils.eth_connector import ETHConnector
 everything_else_router = Router()
 
 
-@everything_else_router.message(F.voice, state='*')
+class EverythingElseStates(StatesGroup):
+    wait_for_user_decision = State()
+    understood_user_decision = State()
+
+
+@everything_else_router.message(F.voice)
 async def voice_handler(message: Message, state: FSMContext) -> None:
     await state.clear()
     file = await message.bot.download(message.voice.file_id)
     transcribed_text = await transcribe_audio(file)
+    await DbConnector.add_message(message.chat.id, transcribed_text)
 
+    await message.reply(
+        text=transcribed_text,
+    )
 
-
-    await message.reply(text=transcribed_text,)
 
 @everything_else_router.message()
 async def everything_else_handler(message: Message, state: FSMContext) -> None:
     await state.clear()
-    text = message.text.split(' ')
+    text = message.text.split(" ")
     address = text[0]
     amount = 0.005
     db_con = DbConnector()
@@ -37,6 +43,4 @@ async def everything_else_handler(message: Message, state: FSMContext) -> None:
     private_key = WalletManager.load_private_key(user.keystore)
     eth_con = ETHConnector(private_key_hex=private_key)
     await eth_con.send_native(to_address=address, amount=amount)
-    await message.reply('done')
-
-
+    await message.reply("done")

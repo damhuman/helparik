@@ -20,8 +20,8 @@ async def command_start_handler(message: Message, state: FSMContext) -> None:
     user = await db_connector.get_user(message.from_user.id)
     if user.wallet_address is None:
         wallet = WalletManager.create_wallet()
-        await db_connector.set_wallet_details(user, wallet['address'], wallet['keystore'])
-    user = await db_connector.get_user(message.from_user.id)
+        await db_connector.set_wallet_details(
+            user, wallet["address"], wallet["keystore"]
+        )
     text = await generate_initial_message(message.from_user.id)
-    await message.reply(text=text,
-                        reply_markup=MainKeyboards.menu_keyboard())
+    await message.reply(text=text, reply_markup=MainKeyboards.menu_keyboard())

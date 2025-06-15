@@ -23,7 +23,7 @@ if config.config_file_name is not None:
 
 # ADD MODELS HERE
 from database.models.user import User, Contact
-from database.models.gpt import Chat, Message
+from database.models.gpt import *
 target_metadata = Base.metadata
 
 config.set_main_option('sqlalchemy.url', DB_URL)

@@ -12,7 +12,7 @@ class WalletManager:
     def create_wallet() -> dict:
         acct = Account.create()
         keystore = Account.encrypt(acct.key, ENCRYPTION_PASSWORD)
-        return {'address': acct.address, 'keystore': keystore}
+        return {"address": acct.address, "keystore": keystore}
 
     @staticmethod
     def load_private_key(keystore: dict) -> str:

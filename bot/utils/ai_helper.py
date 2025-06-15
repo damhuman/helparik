@@ -1,7 +1,12 @@
+from openai import AsyncOpenAI
+
 from bot.utils.message_generator import generate_contacts
+from configuration import OPENAI_API_KEY
+
+client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+
 
 async def understand_action(input_message: str, telegram_id: int) -> str:
-    connector = ChatGPTConnector()
     contact_list = await generate_contacts(telegram_id=telegram_id)
 
     prompt = f"""
@@ -21,5 +26,13 @@ async def understand_action(input_message: str, telegram_id: int) -> str:
         {"role": "system", "content": prompt},
         {"role": "user", "content": input_message}
     ]
-    response = await connector.get_completion(messages, temperature=0.7)
+    response = await client.get_completion(messages, temperature=0.7)
     print(response["choices"][0]["message"]["content"])
+
+
+async def transcribe_audio(audio_file: bytes) -> str:
+    transcription = await client.audio.transcriptions.create(
+        model="whisper-1",
+        file=audio_file
+    )
+    return transcription.text

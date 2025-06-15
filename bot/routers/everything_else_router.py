@@ -30,12 +30,10 @@ async def voice_handler(message: Message, state: FSMContext) -> None:
             ua_config.get('main', 'error_processing_request')
         )
         return
-    if 'eth' not in amount:
-        amount += ' ETH'
+
     if action == 'TRANSFER':
         await state.set_state(EverythingElseStates.transaction_confirmation)
-        await state.update_data(amount=amount)
-        await state.update_data(address=address)
+        await state.update_data(amount=amount, address=address)
         await message.reply(
             ua_config.get('transactions', 'transfer').format(
                 amount=amount,
@@ -44,6 +42,7 @@ async def voice_handler(message: Message, state: FSMContext) -> None:
             reply_markup=MainKeyboards.yes_no_keyboard()
         )
         return
+
     await message.reply(
         text=ua_config.get('main', 'error_processing_request')
     )

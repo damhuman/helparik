@@ -51,7 +51,7 @@ async def generate_prompt_message(telegram_id: int) -> str:
     - Identify the recipient from the message using the provided contact list.
     - Match based on names, nicknames, or contextual references.
     - Return in format: name;address (e.g. Alice;0x123...).
-    - If the recipient cannot be found — return ERROR.
+    - If the recipient cannot be found — return ERROR;ERROR.
 
     3. AMOUNT
     - Extract the amount to be transferred or invoiced.
@@ -109,17 +109,16 @@ def parse_ai_response(response: str) -> Tuple[str, str, str, str, str, bool]:
     action, contact, amount, network = response.split("\n")
     action = action.replace('1. ', '')
     contact = contact.replace('2. ', '')
+    username, address = contact.split(";")
     amount = amount.replace('3. ', '')
     network = network.replace('4. ', '')
     status = True
     if action == "ERROR":
         status = False
-    if contact == "ERROR":
-        username = "ERROR"
-        address = "ERROR"
+    if username == "ERROR":
         status = False
-    else:
-        username, address = contact.split(";")
+    if address == "ERROR":
+        status = False
     if amount == "ERROR":
         status = False
     return action, username, address, amount, network, status

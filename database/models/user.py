@@ -29,6 +29,7 @@ class User(Base):
 
 class Contact(Base):
     __tablename__ = 'contacts'
-    telegram_id: Mapped[int] = mapped_column(sa.BigInteger(), primary_key=True)
+    id: Mapped[int] = mapped_column(sa.Integer, primary_key=True, autoincrement=True)
+    telegram_id: Mapped[int] = mapped_column(sa.BigInteger())
     contact_name: Mapped[str]
     wallet_address: Mapped[str]

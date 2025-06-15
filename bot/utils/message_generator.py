@@ -26,7 +26,7 @@ async def generate_contacts(telegram_id: int):
         contacts_text.append(ua_config.get('contact', 'single_contact').format(contact_name=contact.contact_name, contact_address=contact.wallet_address))
     if len(contacts_text) == 0:
         return ua_config.get('contact', 'no_contacts')
-    return '--------------\n'.join(contacts_text)
+    return '\n------------------------------------------\n'.join(contacts_text)
 
 
 async def generate_intmax_balance_message(telegram_id: int):

@@ -1,5 +1,6 @@
 from eth_account import Account
 from web3 import AsyncWeb3, AsyncHTTPProvider, Web3
+import asyncio
 
 from configuration import L1_RPC_URL
 
@@ -17,18 +18,17 @@ class ETHConnector:
         bal = await self.w3.eth.get_balance(self.address)
         return Web3.from_wei(bal, "ether")
 
-    async def send_native(
-        self, to_address: str, amount: float, gas_price_gwei: float = None
-    ) -> str:
+    async def send_native(self, to_address: str, amount: float, gas_price_gwei: float = None) -> str:
         nonce = await self.w3.eth.get_transaction_count(self.address)
+        print(to_address, amount)
         chain_id = await self.w3.eth.chain_id
         tx = {
-            "nonce": nonce,
-            "to": Web3.to_checksum_address(to_address),
-            "value": Web3.to_wei(amount, "ether"),
-            "chainId": chain_id,
-            "gas": 21000,
-            "gasPrice": Web3.to_wei(gas_price_gwei or 10, "gwei"),
+            'nonce': nonce,
+            'to': Web3.to_checksum_address(to_address),
+            'value': Web3.to_wei(amount, 'ether'),
+            'chainId': chain_id,
+            'gas': 21000,
+            'gasPrice': Web3.to_wei(gas_price_gwei or 10, 'gwei')
         }
         signed = self.account.sign_transaction(tx)
         raw = signed.raw_transaction

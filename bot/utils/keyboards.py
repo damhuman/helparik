@@ -33,3 +33,35 @@ class MainKeyboards:
                 ]
             ]
         )
+
+    @staticmethod
+    def yes_no_keyboard():
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=ua_config.get("main", "yes"),
+                        callback_data="yes",
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=ua_config.get("main", "no"),
+                        callback_data="no"
+                    )
+                ]
+            ]
+        )
+
+    @staticmethod
+    def blockchain_explorer_button(txid: str):
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=ua_config.get("main", "blockchain_explorer"),
+                        url=f"https://sepolia.etherscan.io/tx/0x{txid}",
+                    )
+                ]
+            ]
+        )
